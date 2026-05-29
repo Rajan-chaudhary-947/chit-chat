@@ -1,5 +1,7 @@
 import jwt from "jsonwebtoken";
-import { Resend } from "resend";
+import nodemailer from "nodemailer";
+// Resend setup kept for future use:
+// import { Resend } from "resend";
 import { randomInt } from "crypto";
 
 // Generating JWT token valid for 7 days.
@@ -39,10 +41,40 @@ export const generateUserId = (fullName) => {
 
 
 const EMAIL_FROM = process.env.EMAIL_FROM;
-export const resend = new Resend(process.env.RESEND_API_KEY);
+// Resend setup kept for future use:
+// export const resend = new Resend(process.env.RESEND_API_KEY);
+
+const brevoTransporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST,
+  port: Number(process.env.SMTP_PORT || 587),
+  secure: false,
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
+  },
+});
+
 export const sendVerificationOtp = async (user, otp) => {
   try {
-    const { email, error } = await resend.emails.send({
+    // Resend email sender kept for future use:
+    // const { error } = await resend.emails.send({
+    //   from: EMAIL_FROM,
+    //   to: user.email,
+    //   subject: "Verify your email for Chat App",
+    //   html: `
+    //     <p>Hi ${user.fullName},</p>
+    //     <p>Your OTP for verifying your email is: <strong>${otp}</strong></p>
+    //     <p>This OTP is valid for 10 minutes.</p>
+    //     <p>If you did not request this, please ignore this email.</p>
+    //     <p>Thanks,<br/>Chit Chat Team</p>
+    //   `,
+    // });
+    //
+    // if (error) {
+    //   throw new Error("Failed to send verification email");
+    // }
+
+    await brevoTransporter.sendMail({
       from: EMAIL_FROM,
       to: user.email,
       subject: "Verify your email for Chat App",
@@ -54,10 +86,6 @@ export const sendVerificationOtp = async (user, otp) => {
         <p>Thanks,<br/>Chit Chat Team</p>
       `,
     });
-
-    if (error) {
-      throw new Error("Failed to send verification email");
-    }
   } catch (error) {
     throw error;
   };
