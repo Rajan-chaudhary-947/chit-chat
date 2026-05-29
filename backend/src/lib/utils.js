@@ -44,15 +44,24 @@ const EMAIL_FROM = process.env.EMAIL_FROM;
 // Resend setup kept for future use:
 // export const resend = new Resend(process.env.RESEND_API_KEY);
 
-const brevoTransporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: Number(process.env.SMTP_PORT || 587),
-  secure: false,
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-});
+const getBrevoTransporter = () => {
+  const requiredEnvVars = ["SMTP_HOST", "SMTP_USER", "SMTP_PASS", "EMAIL_FROM"];
+  const missingEnvVars = requiredEnvVars.filter((key) => !process.env[key]);
+
+  if (missingEnvVars.length > 0) {
+    throw new Error(`Missing email configuration: ${missingEnvVars.join(", ")}`);
+  }
+
+  return nodemailer.createTransport({
+    host: process.env.SMTP_HOST,
+    port: Number(process.env.SMTP_PORT || 587),
+    secure: false,
+    auth: {
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS,
+    },
+  });
+};
 
 export const sendVerificationOtp = async (user, otp) => {
   try {
@@ -74,7 +83,7 @@ export const sendVerificationOtp = async (user, otp) => {
     //   throw new Error("Failed to send verification email");
     // }
 
-    await brevoTransporter.sendMail({
+    await getBrevoTransporter().sendMail({
       from: EMAIL_FROM,
       to: user.email,
       subject: "Verify your email for Chat App",

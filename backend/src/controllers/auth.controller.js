@@ -54,7 +54,8 @@ export const signup = async (req, res) => {
     if (newUser) {
       try {
         await createVerificationOtp(newUser);
-      } catch {
+      } catch (error) {
+        console.error(error);
         return res.status(500).json({ message: "Error sending verification OTP" });
       }
 
@@ -66,7 +67,8 @@ export const signup = async (req, res) => {
     } else {
       res.status(400).json({ message: "Invalid user data" });
     }
-  } catch {
+  } catch (error) {
+    console.error(error);
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
@@ -112,7 +114,8 @@ export const verifyEmail = async (req, res) => {
     generateToken(user._id, res);
 
     res.status(200).json({ message: "Email verified successfully", user: getPublicUser(user) });
-  } catch {
+  } catch (error) {
+    console.error(error);
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
@@ -144,7 +147,8 @@ export const resendVerificationOtp = async (req, res) => {
     await createVerificationOtp(user);
 
     res.status(200).json({ message: "Verification OTP resent successfully" });
-  } catch {
+  } catch (error) {
+    console.error(error);
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
@@ -186,7 +190,8 @@ export const login = async (req, res) => {
     generateToken(user._id, res);
 
     res.status(200).json(getPublicUser(user));
-  } catch {
+  } catch (error) {
+    console.error(error);
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
