@@ -18,8 +18,8 @@ const getPublicUser = (user) => ({
 const createVerificationOtp = async (user) => {
   const otp = generateOtp();
   user.emailOtp = await bcrypt.hash(otp, 10);
-  user.emailOtpExpiry = Date.now() + 10 * 60 * 1000; // OTP valid for 10 minutes
-  user.emailOtpLastSent = Date.now();
+  user.emailOtpExpiry = new Date(Date.now() + 5 * 60 * 1000); // OTP valid for 5 minutes
+  user.emailOtpLastSent = new Date();
   await user.save();
   await sendVerificationOtp(user, otp);
 };
@@ -44,32 +44,36 @@ export const signup = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
+    const otp = generateOtp();
+    const hashedOtp = await bcrypt.hash(otp, 10);
     const newUser = new User({
       fullName,
       email,
       password: hashedPassword,
       userId: generateUserId(fullName),
+      emailOtp: hashedOtp,
+      emailOtpExpiry: new Date(Date.now() + 5 * 60 * 1000),
+      emailOtpLastSent: new Date(),
     });
 
     if (newUser) {
+      await newUser.save();
       try {
-        await createVerificationOtp(newUser);
+        await sendVerificationOtp(newUser, otp);
       } catch (error) {
-        console.error(error);
-        return res.status(500).json({ message: "Error sending verification OTP" });
+        await User.deleteOne({ _id: newUser._id });
+        throw error;
       }
 
-      res.status(201).json({
-        message: "Account created. Please verify your email.",
-        email: newUser.email,
-        requiresVerification: true,
-      });
+      generateToken(newUser._id, res);
+      res.status(201).json(getPublicUser(newUser));
     } else {
       res.status(400).json({ message: "Invalid user data" });
     }
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Internal Server Error" });
+    console.log("Error in signup controller", error.message);
+    console.log("Full error:", error);
+    res.status(error.statusCode || 500).json({ message: error.message || "Internal Server Error" });
   }
 };
 
@@ -93,7 +97,7 @@ export const verifyEmail = async (req, res) => {
     if (!otp || otp.length !== 6) {
       return res.status(400).json({ message: "Invalid OTP" });
     }
-    if (!user.emailOtp){
+    if (!user.emailOtp) {
       return res.status(400).json({ message: "No OTP found. Please request a new one." });
     }
     if (user.emailOtpExpiry < Date.now()) {
@@ -104,14 +108,12 @@ export const verifyEmail = async (req, res) => {
     if (!validOtp) {
       return res.status(400).json({ message: "Invalid OTP" });
     }
-    
+
     user.isVerified = true;
     user.emailOtp = null;
     user.emailOtpExpiry = null;
     user.emailOtpLastSent = null;
     await user.save();
-
-    generateToken(user._id, res);
 
     res.status(200).json({ message: "Email verified successfully", user: getPublicUser(user) });
   } catch (error) {
@@ -123,6 +125,7 @@ export const verifyEmail = async (req, res) => {
 // Handling Resend Verification OTP
 export const resendVerificationOtp = async (req, res) => {
   const { email } = req.body;
+
   try {
     if (!email) {
       return res.status(400).json({ message: "Email is required" });
@@ -130,29 +133,33 @@ export const resendVerificationOtp = async (req, res) => {
 
     const user = await User.findOne({ email });
 
-    if(!user) {
-      return res.status(404).json({ message: "User not found" });
+    if (!user) {
+      return res.status(400).json({ message: "User not found!" });
     }
-    if(user.isVerified) {
-      return res.status(400).json({ message: "Email is already verified", user: getPublicUser(user) }); 
+    if (user.isVerified) {
+      return res.status(400).json({ message: "Email already verified" });
     }
 
     const lastSent = user.emailOtpLastSent?.getTime() || 0;
-    const cooldownEndsAt = lastSent + 60 * 1000; // 1 minute cooldown
+    const cooldownEndsAt = lastSent + 60 * 1000;
     if (Date.now() < cooldownEndsAt) {
       const secondsLeft = Math.ceil((cooldownEndsAt - Date.now()) / 1000);
-      return res.status(429).json({ message: `Please wait ${secondsLeft} seconds before requesting a new OTP` });
+      return res.status(429).json({ message: `Please wait ${secondsLeft}s before requesting another OTP` });
     }
 
-    await createVerificationOtp(user);
+    const otp = generateOtp();
+    user.emailOtp = await bcrypt.hash(otp, 10);
+    user.emailOtpExpiry = new Date(Date.now() + 5 * 60 * 1000);
+    user.emailOtpLastSent = new Date();
+    await user.save();
+    await sendVerificationOtp(user, otp);
 
-    res.status(200).json({ message: "Verification OTP resent successfully" });
+    res.status(200).json({ message: "Verification OTP sent" });
   } catch (error) {
-    console.error(error);
+    console.log("Error in resendVerificationOtp controller", error.message);
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
-
 // Handling Login a user
 export const login = async (req, res) => {
   const { email, password } = req.body;
@@ -239,7 +246,7 @@ export const updateProfile = async (req, res) => {
 // Handling Authentication check
 export const checkAuth = (req, res) => {
   try {
-    res.status(200).json(req.user);
+    res.status(200).json(getPublicUser(req.user));
   } catch {
     res.status(500).json({ message: "Internal Server Error" });
   }

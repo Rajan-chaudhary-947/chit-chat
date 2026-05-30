@@ -23,83 +23,71 @@ export const generateToken = (userId, res) => {
 
 export const generateUserId = (fullName) => {
 
-    const firstName =
-        fullName
-        .trim()
-        .split(" ")[0]
-        .toLowerCase()
-        .replace(/[^a-z0-9]/g, "");
+  const firstName =
+    fullName
+      .trim()
+      .split(" ")[0]
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, "");
 
-    const timePart =
-        Date.now().toString().slice(-5);
+  const timePart =
+    Date.now().toString().slice(-5);
 
-    const randomPart =
-        Math.floor(10 + Math.random() * 90);
+  const randomPart =
+    Math.floor(10 + Math.random() * 90);
 
-    return `${firstName}${timePart}${randomPart}`;
+  return `${firstName}${timePart}${randomPart}`;
 };
 
 
 const EMAIL_FROM = process.env.EMAIL_FROM;
+const USERNAME = process.env.GMAIL_USER;
+const PASSWORD = process.env.GMAIL_PASS;
 // Resend setup kept for future use:
 // export const resend = new Resend(process.env.RESEND_API_KEY);
 
-const getBrevoTransporter = () => {
-  const requiredEnvVars = ["SMTP_HOST", "SMTP_USER", "SMTP_PASS", "EMAIL_FROM"];
-  const missingEnvVars = requiredEnvVars.filter((key) => !process.env[key]);
+export const sendVerificationOtp = async (user, otp) => {
+  // Resend email sender kept for future use:
+  // const { error } = await resend.emails.send({
+  //   from: EMAIL_FROM,
+  //   to: user.email,
+  //   subject: "Verify your email for Chat App",
+  //   html: `
+  //     <p>Hi ${user.fullName},</p>
+  //     <p>Your OTP for verifying your email is: <strong>${otp}</strong></p>
+  //     <p>This OTP is valid for 10 minutes.</p>
+  //     <p>If you did not request this, please ignore this email.</p>
+  //     <p>Thanks,<br/>Chit Chat Team</p>
+  //   `,
+  // });
+  //
+  // if (error) {
+  //   throw new Error("Failed to send verification email");
+  // }
 
-  if (missingEnvVars.length > 0) {
-    throw new Error(`Missing email configuration: ${missingEnvVars.join(", ")}`);
-  }
 
-  return nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: Number(process.env.SMTP_PORT || 587),
-    secure: false,
+  const transporter = nodemailer.createTransport({
+    host: 'smtp.gmail.com',
+    port: 587,
     auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
-    },
+      user: USERNAME,
+      pass: PASSWORD
+    }
+  });
+
+  const info = await transporter.sendMail({
+    from: EMAIL_FROM,
+    to: user.email,
+    subject: "Verify your email for getting started with Chit Chat",
+    html: `
+      <p>Hi ${user.fullName},</p>
+      <p>Your OTP for verifying your email is: <strong>${otp}</strong></p>
+      <p>This OTP is valid for 5 minutes.</p>
+      <p>If you did not request this, please ignore this email.</p>
+      <p>Thanks,<br/>Chit Chat Team</p>
+    `,
   });
 };
-
-export const sendVerificationOtp = async (user, otp) => {
-  try {
-    // Resend email sender kept for future use:
-    // const { error } = await resend.emails.send({
-    //   from: EMAIL_FROM,
-    //   to: user.email,
-    //   subject: "Verify your email for Chat App",
-    //   html: `
-    //     <p>Hi ${user.fullName},</p>
-    //     <p>Your OTP for verifying your email is: <strong>${otp}</strong></p>
-    //     <p>This OTP is valid for 10 minutes.</p>
-    //     <p>If you did not request this, please ignore this email.</p>
-    //     <p>Thanks,<br/>Chit Chat Team</p>
-    //   `,
-    // });
-    //
-    // if (error) {
-    //   throw new Error("Failed to send verification email");
-    // }
-
-    await getBrevoTransporter().sendMail({
-      from: EMAIL_FROM,
-      to: user.email,
-      subject: "Verify your email for Chat App",
-      html: `
-        <p>Hi ${user.fullName},</p>
-        <p>Your OTP for verifying your email is: <strong>${otp}</strong></p>
-        <p>This OTP is valid for 10 minutes.</p>
-        <p>If you did not request this, please ignore this email.</p>
-        <p>Thanks,<br/>Chit Chat Team</p>
-      `,
-    });
-  } catch (error) {
-    throw error;
-  };
-};
-
 export const generateOtp = () => {
   return randomInt(100000, 1000000).toString();
 };

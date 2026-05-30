@@ -19,7 +19,7 @@ Chit-Chat is a full-stack MERN application built for conversations that feel imm
 
 **Frontend:** React, Vite, Tailwind CSS, DaisyUI, Zustand, Axios, Socket.IO Client  
 **Backend:** Node.js, Express, MongoDB, Mongoose, JWT, bcryptjs, Socket.IO  
-**Services:** Brevo SMTP for OTP email, Cloudinary for profile images
+**Services:** Gmail SMTP with Nodemailer for OTP email, Cloudinary for profile images
 
 ## Project Structure
 
@@ -56,10 +56,8 @@ CLOUDINARY_CLOUD_NAME=your_cloud_name
 CLOUDINARY_API_KEY=your_api_key
 CLOUDINARY_API_SECRET=your_api_secret
 
-SMTP_HOST=smtp-relay.brevo.com
-SMTP_PORT=587
-SMTP_USER=your_brevo_smtp_login
-SMTP_PASS=your_brevo_smtp_key
+GMAIL_USER=your_gmail_address
+GMAIL_PASS=your_gmail_app_password
 EMAIL_FROM=Chit Chat <your_verified_sender_email>
 ```
 
@@ -110,13 +108,11 @@ The backend serves the frontend build in production.
 
 Render works well for this app. Add your production environment variables in Render's Environment tab.
 
-For Brevo, create an SMTP key in your Brevo dashboard and use the SMTP values in your Render environment variables:
+For OTP emails, the backend uses Nodemailer with Gmail SMTP. Use a Gmail app password, not your normal Gmail password:
 
 ```env
-SMTP_HOST=smtp-relay.brevo.com
-SMTP_PORT=587
-SMTP_USER=your_brevo_smtp_login
-SMTP_PASS=your_brevo_smtp_key
+GMAIL_USER=your_gmail_address
+GMAIL_PASS=your_gmail_app_password
 EMAIL_FROM=Chit Chat <your_verified_sender_email>
 ```
 
@@ -127,7 +123,7 @@ If the frontend and backend are hosted on different origins, update backend CORS
 - Keep `.env` files out of git.
 - Rotate any API keys that were ever pasted into chat, screenshots, or logs.
 - Use a long random `JWT_SECRET` in production.
-- Use a verified sender or domain in Brevo for better deliverability.
+- Use a Gmail app password for `GMAIL_PASS`; do not use your regular account password.
 
 ## Scripts
 

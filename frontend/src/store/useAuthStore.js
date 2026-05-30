@@ -41,7 +41,7 @@ export const useAuthStore = create((set, get) => ({
       const res = await axiosInstance.post("/auth/signup", data);
       sessionStorage.setItem("pendingVerificationEmail", res.data.email);
       set({ authUser: null, pendingVerificationEmail: res.data.email });
-      toast.success("Account created, Check your email for verification OTP");
+      toast.success("Account created, Check your email for verification OTP.");
       return "verification";
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to create account");
@@ -54,7 +54,12 @@ export const useAuthStore = create((set, get) => ({
   verifyEmail: async (otp) => {
     set({ isVerifyingEmail: true });
     try {
-      const email = get().pendingVerificationEmail;
+      const email = get().pendingVerificationEmail || sessionStorage.getItem("pendingVerificationEmail");
+      if (!email) {
+        toast.error("Please sign up or log in again to verify your email");
+        return false;
+      }
+
       const res = await axiosInstance.post("/auth/verify-email", { email, otp });
       sessionStorage.removeItem("pendingVerificationEmail");
       set({ authUser: res.data.user, pendingVerificationEmail: null });
@@ -73,7 +78,12 @@ export const useAuthStore = create((set, get) => ({
   resendVerificationOtp: async () => {
     set({ isResendingOtp: true });
     try {
-      const email = get().pendingVerificationEmail;
+      const email = get().pendingVerificationEmail || sessionStorage.getItem("pendingVerificationEmail");
+      if (!email) {
+        toast.error("Please sign up or log in again to request an OTP");
+        return;
+      }
+
       const res = await axiosInstance.post("/auth/resend-verification-otp", { email });
       toast.success(res.data.message || "OTP sent successfully");
     } catch (error) {
@@ -91,7 +101,7 @@ export const useAuthStore = create((set, get) => ({
       if (res.data.requiresVerification) {
         sessionStorage.setItem("pendingVerificationEmail", res.data.email);
         set({ authUser: null, pendingVerificationEmail: res.data.email });
-        toast.success(res.data.message || "Check your email for verification OTP");
+        toast.success(res.data.message || "Check your email for verification OTP.");
         return "verification";
       }
 
