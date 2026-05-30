@@ -43,6 +43,7 @@ export const generateUserId = (fullName) => {
 const EMAIL_FROM = process.env.EMAIL_FROM;
 const USERNAME = process.env.GMAIL_USER;
 const PASSWORD = process.env.GMAIL_PASS;
+const host = process.env.HOST;
 // Resend setup kept for future use:
 // export const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -67,7 +68,7 @@ export const sendVerificationOtp = async (user, otp) => {
 
 
   const transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
+    host: host,
     port: 587,
     auth: {
       user: USERNAME,
