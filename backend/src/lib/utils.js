@@ -48,6 +48,7 @@ const mailPort = process.env.SMTP_PORT;
 // Resend setup kept for future use:
 // export const resend = new Resend(process.env.RESEND_API_KEY);
 
+
 export const sendVerificationOtp = async (user, otp) => {
   // Resend email sender kept for future use:
   // const { error } = await resend.emails.send({
