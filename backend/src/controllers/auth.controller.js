@@ -58,11 +58,15 @@ export const signup = async (req, res) => {
 
     if (newUser) {
       await newUser.save();
+      
       try {
+        console.log("Sending verification OTP...");
         await sendVerificationOtp(newUser, otp);
-      } catch (error) {
+        console.log("OTP sent successfully");
+      } catch (emailError) {
+        console.error("❌ Email sending failed:", emailError.message);
         await User.deleteOne({ _id: newUser._id });
-        throw error;
+        return res.status(500).json({ message: `Failed to send verification email: ${emailError.message}` });
       }
 
       generateToken(newUser._id, res);
@@ -71,7 +75,7 @@ export const signup = async (req, res) => {
       res.status(400).json({ message: "Invalid user data" });
     }
   } catch (error) {
-    console.log("Error in signup controller", error.message);
+    console.log("Error in signup controller:", error.message);
     console.log("Full error:", error);
     res.status(error.statusCode || 500).json({ message: error.message || "Internal Server Error" });
   }
