@@ -16,12 +16,27 @@ const __dirname = path.resolve();
 
 app.use(express.json());
 app.use(cookieParser());
+
+// Debugging middleware
+app.use((req, res, next) => {
+  console.log("Origin:", req.get("origin"));
+  console.log("CLIENT_URL:", process.env.CLIENT_URL);
+  console.log("Cookies:", req.cookies);
+  next();
+});
+
+// CORS configuration - FIX: use array and remove strict matching
 app.use(
   cors({
-    origin: process.env.CLIENT_URL,
+    origin: [
+      "http://localhost:5173",
+      "http://localhost:5174",
+      process.env.CLIENT_URL,
+    ],
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
+    optionsSuccessStatus: 200,
   })
 );
 
@@ -40,6 +55,6 @@ if (process.env.NODE_ENV === "production") {
 }
 
 server.listen(PORT, () => {
-  console.log("welcome to server");
+  console.log("Welcome to server on port", PORT);
   connectDB();
 });
