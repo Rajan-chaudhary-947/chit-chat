@@ -26,7 +26,6 @@ export const generateToken = (userId, res) => {
 
 
 export const generateUserId = (fullName) => {
-
   const firstName =
     fullName
       .trim()
@@ -43,58 +42,58 @@ export const generateUserId = (fullName) => {
   return `${firstName}${timePart}${randomPart}`;
 };
 
-
 const EMAIL_FROM = process.env.EMAIL_FROM;
 const USERNAME = process.env.GMAIL_USER;
 const PASSWORD = process.env.GMAIL_PASS;
 const host = process.env.HOST;
 const mailPort = process.env.SMTP_PORT;
-// Resend setup kept for future use:
-// export const resend = new Resend(process.env.RESEND_API_KEY);
 
+// Create transporter once instead of creating it every time
+let transporter = null;
+
+const getTransporter = () => {
+  if (!transporter) {
+    transporter = nodemailer.createTransport({
+      host: host,
+      port: mailPort,
+      secure: mailPort == 465, // true for 465, false for other ports
+      auth: {
+        user: USERNAME,
+        pass: PASSWORD
+      }
+    });
+  }
+  return transporter;
+};
 
 export const sendVerificationOtp = async (user, otp) => {
-  // Resend email sender kept for future use:
-  // const { error } = await resend.emails.send({
-  //   from: EMAIL_FROM,
-  //   to: user.email,
-  //   subject: "Verify your email for Chat App",
-  //   html: `
-  //     <p>Hi ${user.fullName},</p>
-  //     <p>Your OTP for verifying your email is: <strong>${otp}</strong></p>
-  //     <p>This OTP is valid for 10 minutes.</p>
-  //     <p>If you did not request this, please ignore this email.</p>
-  //     <p>Thanks,<br/>Chit Chat Team</p>
-  //   `,
-  // });
-  //
-  // if (error) {
-  //   throw new Error("Failed to send verification email");
-  // }
+  try {
+    console.log("Sending OTP to:", user.email);
+    
+    const transporter = getTransporter();
 
+    const mailOptions = {
+      from: EMAIL_FROM,
+      to: user.email,
+      subject: "Verify your email for getting started with Chit Chat",
+      html: `
+        <p>Hi ${user.fullName},</p>
+        <p>Your OTP for verifying your email is: <strong>${otp}</strong></p>
+        <p>This OTP is valid for 5 minutes.</p>
+        <p>If you did not request this, please ignore this email.</p>
+        <p>Thanks,<br/>Chit Chat Team</p>
+      `,
+    };
 
-  const transporter = nodemailer.createTransport({
-    host: host,
-    port: mailPort,
-    auth: {
-      user: USERNAME,
-      pass: PASSWORD
-    }
-  });
-
-  const info = await transporter.sendMail({
-    from: EMAIL_FROM,
-    to: user.email,
-    subject: "Verify your email for getting started with Chit Chat",
-    html: `
-      <p>Hi ${user.fullName},</p>
-      <p>Your OTP for verifying your email is: <strong>${otp}</strong></p>
-      <p>This OTP is valid for 5 minutes.</p>
-      <p>If you did not request this, please ignore this email.</p>
-      <p>Thanks,<br/>Chit Chat Team</p>
-    `,
-  });
+    const info = await transporter.sendMail(mailOptions);
+    console.log("Email sent successfully:", info.response);
+    return info;
+  } catch (error) {
+    console.error("Error sending email:", error.message);
+    throw new Error(`Failed to send verification email: ${error.message}`);
+  }
 };
+
 export const generateOtp = () => {
   return randomInt(100000, 1000000).toString();
 };
