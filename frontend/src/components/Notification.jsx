@@ -72,7 +72,7 @@ function Notification() {
   return (
     <>
       {/* Floating Action Button */}
-      <div ref={notificationRef} className="fixed bottom-6 right-6 z-50">
+      <div ref={notificationRef} className="fixed bottom-6 left-6 z-50">
         {menuOpen && (
           <div className="absolute bottom-16 right-0 w-80 max-w-[calc(100vw-3rem)] overflow-hidden rounded-lg border border-base-300 bg-base-100 shadow-xl">
             <div className="border-b border-base-300 px-4 py-3">
