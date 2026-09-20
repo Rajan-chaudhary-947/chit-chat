@@ -117,6 +117,9 @@ export default function VerifyEmail() {
             )}
           </button>
         </form>
+        <div className="text-sm text-base-content/60 mt-4 text-center">
+        Check Spam folder if you don&apos;t see the email.
+      </div>
       </div>
     </div>
   );

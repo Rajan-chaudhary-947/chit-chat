@@ -25,7 +25,6 @@ io.on("connection", (socket) => {
   const userId = socket.handshake.query.userId;
   if (userId) {
     userSocketMap[userId] = socket.id;
-    console.log(`User ${userId} connected with socket ${socket.id}`);
   }
 
   // io.emit() is used to send events to all the connected clients
@@ -34,7 +33,7 @@ io.on("connection", (socket) => {
   socket.on("disconnect", () => {
     if (userId) {
       delete userSocketMap[userId];
-      console.log(`User ${userId} disconnected`);
+      // console.log(`User ${userId} disconnected`);
     }
     io.emit("getOnlineUsers", Object.keys(userSocketMap));
   });
