@@ -207,6 +207,10 @@ export const useAuthStore = create((set, get) => ({
       query: {
         userId: authUser._id,
       },
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      reconnectionAttempts: 5,
     });
     socket.connect();
 
@@ -215,7 +219,6 @@ export const useAuthStore = create((set, get) => ({
     socket.on("getOnlineUsers", (userIds) => {
       set({ onlineUsers: userIds });
     });
-
 
     socket.on("new_notification", (notification) => {
       set({
