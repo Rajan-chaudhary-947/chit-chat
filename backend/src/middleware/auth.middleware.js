@@ -9,6 +9,7 @@ export const protectRoute = async (req, res, next) => {
     const token = req.cookies.jwt;
     // If there is no token
     if (!token) {
+      console.log("❌ No token found in cookies");
       return res.status(401).json({ message: "Unauthorized - No Token Provided" });
     }
 
@@ -27,7 +28,8 @@ export const protectRoute = async (req, res, next) => {
     }
     req.user = user;
     next();
-  } catch {
+  } catch (error) {
+    console.error("❌ Auth middleware error:", error.message);
     res.status(500).json({ message: "Internal server error" });
   }
 };

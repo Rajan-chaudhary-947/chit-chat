@@ -16,10 +16,45 @@ const __dirname = path.resolve();
 
 app.use(express.json());
 app.use(cookieParser());
+
+// Debugging middleware
+app.use((req, res, next) => {
+  console.log("📨 Request:");
+  console.log("  Origin:", req.get("origin") || "not sent");
+  console.log("  Referer:", req.get("referer") || "not sent");
+  console.log("  HOST:", req.get("host"));
+  console.log("  Cookies:", JSON.stringify(req.cookies));
+  next();
+});
+
+// CORS configuration
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://localhost:5174",
+  process.env.CLIENT_URL,
+];
+
+console.log("✅ Allowed Origins:", allowedOrigins);
+
 app.use(
   cors({
-    origin: ["http://localhost:5173", "http://localhost:5174", process.env.CLIENT_URL],
+    origin: function (origin, callback) {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) {
+        return callback(null, true);
+      }
+      
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        console.log("❌ CORS rejected origin:", origin);
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    optionsSuccessStatus: 200,
   })
 );
 
@@ -38,6 +73,7 @@ if (process.env.NODE_ENV === "production") {
 }
 
 server.listen(PORT, () => {
+  console.log("Welcome to server on port", PORT);
   connectDB();
   console.log(`Server is running on port ${PORT}`);
 });
